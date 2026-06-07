@@ -1,0 +1,224 @@
+/* ===========================================================
+   Advocate Urvish — Portfolio Website
+   Custom styles (Tailwind handles most utilities via CDN)
+   Brand: deep navy + maroon + gold accent
+   =========================================================== */
+
+:root {
+  --navy: #0f1c3f;
+  --navy-light: #1b2c5a;
+  --maroon: #7a1f2b;
+  --gold: #c9a14a;
+  --gold-light: #e2c987;
+  --cream: #f7f3ea;
+  --ink: #1a1a1a;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px; /* offset for sticky nav */
+}
+
+body {
+  font-family: "Poppins", "Noto Sans Gujarati", system-ui, sans-serif;
+  color: var(--ink);
+  background: #ffffff;
+}
+
+.font-serif-brand {
+  font-family: "Playfair Display", "Noto Serif Gujarati", serif;
+}
+
+/* Gujarati needs a slightly larger line-height for readability */
+html[lang="gu"] body {
+  line-height: 1.7;
+}
+
+/* ---------- Brand color utilities ---------- */
+.bg-navy { background-color: var(--navy); }
+.bg-navy-light { background-color: var(--navy-light); }
+.bg-maroon { background-color: var(--maroon); }
+.bg-gold { background-color: var(--gold); }
+.bg-cream { background-color: var(--cream); }
+.text-navy { color: var(--navy); }
+.text-maroon { color: var(--maroon); }
+.text-gold { color: var(--gold); }
+.border-gold { border-color: var(--gold); }
+.ring-gold { --tw-ring-color: var(--gold); }
+
+.btn-gold {
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+  color: var(--navy);
+  font-weight: 600;
+}
+.btn-gold:hover { filter: brightness(1.05); transform: translateY(-1px); }
+
+/* ===========================================================
+   Hero slider
+   =========================================================== */
+.hero-slider {
+  position: relative;
+  height: 90vh;
+  min-height: 520px;
+  max-height: 820px;
+  overflow: hidden;
+  background: var(--navy);
+}
+
+.hero-slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: scale(1.06);
+  transition: opacity 1.2s ease, transform 6s ease;
+  background-size: cover;
+  background-position: center 30%; /* portrait photos: bias slightly toward faces */
+}
+.hero-slide.active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* dark overlay so the headline is readable over any photo */
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    rgba(15, 28, 63, 0.92) 0%,
+    rgba(15, 28, 63, 0.7) 45%,
+    rgba(15, 28, 63, 0.35) 100%
+  );
+}
+
+.hero-dots {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  z-index: 5;
+}
+.hero-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.hero-dot.active {
+  background: var(--gold);
+  width: 30px;
+}
+
+.hero-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  transition: background 0.3s;
+}
+.hero-arrow:hover { background: var(--gold); color: var(--navy); }
+.hero-arrow.prev { left: 18px; }
+.hero-arrow.next { right: 18px; }
+
+@media (max-width: 640px) {
+  .hero-arrow { display: none; }
+  .hero-slider { height: 86vh; }
+}
+
+/* ===========================================================
+   Reveal-on-scroll animation
+   =========================================================== */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ===========================================================
+   Service cards
+   =========================================================== */
+.service-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  border-top: 3px solid transparent;
+}
+.service-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 22px 45px -20px rgba(15, 28, 63, 0.45);
+  border-top-color: var(--gold);
+}
+
+/* ===========================================================
+   Floating action buttons
+   =========================================================== */
+.fab-stack {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.fab {
+  width: 56px;
+  height: 56px;
+  border-radius: 9999px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  box-shadow: 0 10px 24px -6px rgba(0, 0, 0, 0.4);
+  transition: transform 0.25s;
+}
+.fab:hover { transform: scale(1.08); }
+.fab-whatsapp { background: #25d366; }
+.fab-call { background: var(--maroon); }
+.fab svg { width: 28px; height: 28px; }
+
+/* gentle pulse on the whatsapp fab to draw attention */
+.fab-whatsapp {
+  animation: fabPulse 2.4s infinite;
+}
+@keyframes fabPulse {
+  0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.55); }
+  70% { box-shadow: 0 0 0 16px rgba(37, 211, 102, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
+}
+
+/* ===========================================================
+   Mobile nav
+   =========================================================== */
+#mobileMenu {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+}
+#mobileMenu.open { max-height: 480px; }
+
+/* Section heading underline accent */
+.heading-accent::after {
+  content: "";
+  display: block;
+  width: 64px;
+  height: 3px;
+  background: var(--gold);
+  margin: 14px auto 0;
+  border-radius: 2px;
+}
+.heading-accent.left::after { margin-left: 0; }
