@@ -97,6 +97,26 @@ originals using the same filenames — no code change needed.
 There may be a stray `images/advocate urvish.enc` file (incomplete/encrypted upload);
 it is unused and safe to delete.
 
+## Analytics, leads & SEO (free stack)
+Added in the second phase. All driven by `js/config.js` (`window.SITE_CONFIG`) which holds
+`SITE_URL`, `LEADS_ENDPOINT`, `GA4_ID`, `CLARITY_ID`. `config.js` is loaded in the `<head>`
+of every page BEFORE `main.js` and lazy-loads GA4/Clarity only when IDs are present.
+- **Lead capture:** `logLead()` in `main.js` POSTs (mode `no-cors`) to a Google Apps
+  Script web app (`apps-script/Code.gs`) that appends a row to a Google Sheet. The script
+  is the source of truth the client pastes into Apps Script.
+- **Analytics events:** `track()` in `main.js` sends GA4 events. `recordContact(type,info)`
+  does both (event + sheet) and is called from `initForm()` (type `form`) and from the
+  click handlers in `initServiceLinks()` (types `whatsapp` / `call`). Event names:
+  `form_contact`, `whatsapp_contact`, `call_contact`.
+- **All helpers are safe no-ops when the config IDs are blank** — never break the site.
+- **SEO:** each HTML `<head>` has keyword title/description, Open Graph + Twitter tags,
+  canonical, and JSON-LD `LegalService` schema. `sitemap.xml` + `robots.txt` at root.
+  Hero slides have `role="img"` + `aria-label`. **The placeholder domain
+  `https://advocate-urvish.netlify.app` appears in head tags, `sitemap.xml`, `robots.txt`
+  and `config.js` — find/replace it everywhere when the real domain is known.**
+- **Client setup** (creating GA4 / Sheet / Netlify / Search Console / Business Profile) is
+  documented step-by-step in `SETUP.md`. Hosting target is Netlify (`netlify.toml`).
+
 ## Run / preview
 Static site — open `index.html` directly, OR serve it:
 ```

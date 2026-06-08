@@ -12,6 +12,49 @@ const PHONE = "6355475659";
 const WA_NUMBER = "916355475659"; // wa.me uses country code, no '+'
 
 /* ----------------------------------------------------------
+   0. ANALYTICS + LEAD LOGGING (free: GA4 + Google Sheet)
+   ----------------------------------------------------------
+   track()   -> sends a Google Analytics 4 event (if GA4 is set up)
+   logLead() -> saves a row to your Google Sheet (if endpoint is set up)
+   recordContact() -> does both at once for every reach-out
+   All are safe no-ops when the IDs in js/config.js are blank. */
+function track(eventName, params) {
+  try {
+    if (typeof window.gtag === "function") window.gtag("event", eventName, params || {});
+  } catch (e) {}
+}
+
+function logLead(data) {
+  try {
+    const cfg = window.SITE_CONFIG || {};
+    if (!cfg.LEADS_ENDPOINT) return; // not configured yet -> skip silently
+    const payload = Object.assign(
+      {
+        page: location.pathname,
+        language: document.documentElement.getAttribute("lang") || "en",
+        referrer: document.referrer || "",
+        userAgent: navigator.userAgent || "",
+      },
+      data || {}
+    );
+    // no-cors: the request still reaches Apps Script; we don't need the response.
+    fetch(cfg.LEADS_ENDPOINT, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload),
+    }).catch(function () {});
+  } catch (e) {}
+}
+
+/* Record a customer reach-out: fires the GA4 event AND saves to the Sheet. */
+function recordContact(type, info) {
+  const data = Object.assign({ type: type }, info || {});
+  track(type + "_contact", { service: data.service || "", source: data.source || "" });
+  logLead(data);
+}
+
+/* ----------------------------------------------------------
    1. LANGUAGE
    ---------------------------------------------------------- */
 function applyLanguage(lang) {
@@ -160,6 +203,9 @@ function initForm() {
     if (service) text += "Service: " + encodeURIComponent(service) + "%0A";
     if (message) text += "Message: " + encodeURIComponent(message) + "%0A";
 
+    // Save the lead (Google Sheet) + analytics event BEFORE opening WhatsApp.
+    recordContact("form", { name: name, phone: phone, service: service, message: message, source: "contact_form" });
+
     window.open(`https://wa.me/${WA_NUMBER}?text=${text}`, "_blank");
   });
 }
@@ -173,9 +219,13 @@ function waLink(serviceName) {
 }
 function initServiceLinks() {
   document.querySelectorAll("[data-wa-service]").forEach((a) => {
-    a.href = waLink(a.getAttribute("data-wa-service"));
+    const service = a.getAttribute("data-wa-service");
+    a.href = waLink(service);
     a.target = "_blank";
     a.rel = "noopener";
+    a.addEventListener("click", () =>
+      recordContact("whatsapp", { service: service, source: "service_card" })
+    );
   });
   // generic whatsapp / call links
   document.querySelectorAll("[data-wa]").forEach((a) => {
@@ -183,9 +233,15 @@ function initServiceLinks() {
     a.href = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
     a.target = "_blank";
     a.rel = "noopener";
+    a.addEventListener("click", () =>
+      recordContact("whatsapp", { message: msg, source: "whatsapp_button" })
+    );
   });
   document.querySelectorAll("[data-call]").forEach((a) => {
     a.href = `tel:+${WA_NUMBER}`;
+    a.addEventListener("click", () =>
+      recordContact("call", { source: "call_button" })
+    );
   });
 }
 
