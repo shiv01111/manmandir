@@ -311,14 +311,36 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;");
 }
 
-/* Render immediately from static posts.js, then silently update from Sheet */
+/* ── Blog post cache (localStorage, 10-min TTL) ──────────────
+   Instant load on every visit; sheet refreshes silently in background. */
+const BLOG_CACHE_KEY = "av_blog_v1";
+const BLOG_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
+function getCachedPosts() {
+  try {
+    const s = localStorage.getItem(BLOG_CACHE_KEY);
+    if (!s) return null;
+    const obj = JSON.parse(s);
+    if (Date.now() - obj.ts > BLOG_CACHE_TTL) return null; // stale
+    return obj.posts || null;
+  } catch (e) { return null; }
+}
+
+function setCachedPosts(posts) {
+  try { localStorage.setItem(BLOG_CACHE_KEY, JSON.stringify({ ts: Date.now(), posts })); }
+  catch (e) {}
+}
+
 function initBlogPreview() {
   const wrap = document.getElementById("blogPreview");
   if (!wrap) return;
-  const staticPosts = window.BLOG_POSTS || [];
-  wrap.innerHTML = staticPosts.slice(0, 3).map((p) => postCard(p, false)).join("");
+  // Show instantly: cache → static → empty
+  const instant = getCachedPosts() || window.BLOG_POSTS || [];
+  wrap.innerHTML = instant.slice(0, 3).map((p) => postCard(p, false)).join("");
   initReveal();
+  // Refresh from sheet silently; update + re-cache if newer data arrives
   fetchSheetPosts((posts) => {
+    setCachedPosts(posts);
     wrap.innerHTML = posts.slice(0, 3).map((p) => postCard(p, false)).join("");
     initReveal();
   });
@@ -327,10 +349,11 @@ function initBlogPreview() {
 function initBlogFull() {
   const wrap = document.getElementById("blogFull");
   if (!wrap) return;
-  const staticPosts = window.BLOG_POSTS || [];
-  wrap.innerHTML = staticPosts.map((p) => postCard(p, true)).join("");
+  const instant = getCachedPosts() || window.BLOG_POSTS || [];
+  wrap.innerHTML = instant.map((p) => postCard(p, true)).join("");
   initReveal();
   fetchSheetPosts((posts) => {
+    setCachedPosts(posts);
     wrap.innerHTML = posts.map((p) => postCard(p, true)).join("");
     initReveal();
   });
@@ -339,10 +362,14 @@ function initBlogFull() {
 function fetchSheetPosts(callback) {
   const cfg = window.SITE_CONFIG || {};
   if (!cfg.BLOG_ENDPOINT) return;
-  fetch(cfg.BLOG_ENDPOINT + "?action=posts")
+  // 6-second timeout — don't let a slow Apps Script stall the page
+  const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => controller.abort(), 6000) : null;
+  fetch(cfg.BLOG_ENDPOINT + "?action=posts", controller ? { signal: controller.signal } : {})
     .then((r) => r.json())
     .then((posts) => { if (Array.isArray(posts) && posts.length) callback(posts); })
-    .catch(() => {});
+    .catch(() => {})
+    .finally(() => { if (timer) clearTimeout(timer); });
 }
 
 /* ----------------------------------------------------------
