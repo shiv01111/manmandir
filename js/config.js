@@ -8,9 +8,13 @@ window.SITE_CONFIG = {
   // Public website address (used for SEO links). Update after deploy.
   SITE_URL: "https://advocate-urvish.netlify.app",
 
-  // Google Apps Script Web App URL that saves inquiries to your Google Sheet.
-  // SETUP.md → Step 1.  Example: "https://script.google.com/macros/s/AKfy.../exec"
+  // Google Apps Script Web App URL that saves inquiries to your Leads Sheet.
+  // SETUP.md → Step 1.
   LEADS_ENDPOINT: "https://script.google.com/macros/s/AKfycbwyA_UAbF7Od51HiS5FWb-GZobze-yXcEVjqFrwyZzCV9D8wTQ1U7u0UiSec-bs57NEmA/exec",
+
+  // Google Apps Script Web App URL for the SEPARATE Blog Sheet (apps-script/Blog.gs).
+  // SETUP.md → Step 1b.  Paste the Blog.gs deployment URL here.
+  BLOG_ENDPOINT: "",
 
   // Google Analytics 4 Measurement ID.  SETUP.md → Step 2.  Example: "G-XXXXXXXXXX"
   GA4_ID: "",

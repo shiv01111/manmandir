@@ -311,17 +311,36 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;");
 }
 
+/* Fetch posts from Blog Sheet (live) with fallback to static posts.js */
+function loadPosts(callback) {
+  const cfg = window.SITE_CONFIG || {};
+  const endpoint = cfg.BLOG_ENDPOINT;
+  if (!endpoint) { callback(window.BLOG_POSTS || []); return; }
+
+  fetch(endpoint + "?action=posts")
+    .then((r) => r.json())
+    .then((posts) => {
+      callback(Array.isArray(posts) && posts.length ? posts : (window.BLOG_POSTS || []));
+    })
+    .catch(() => callback(window.BLOG_POSTS || []));
+}
+
 function initBlogPreview() {
   const wrap = document.getElementById("blogPreview");
-  if (!wrap || typeof BLOG_POSTS === "undefined") return;
-  const latest = BLOG_POSTS.slice(0, 3);
-  wrap.innerHTML = latest.map((p) => postCard(p, false)).join("");
+  if (!wrap) return;
+  loadPosts((posts) => {
+    wrap.innerHTML = posts.slice(0, 3).map((p) => postCard(p, false)).join("");
+    initReveal();
+  });
 }
 
 function initBlogFull() {
   const wrap = document.getElementById("blogFull");
-  if (!wrap || typeof BLOG_POSTS === "undefined") return;
-  wrap.innerHTML = BLOG_POSTS.map((p) => postCard(p, true)).join("");
+  if (!wrap) return;
+  loadPosts((posts) => {
+    wrap.innerHTML = posts.map((p) => postCard(p, true)).join("");
+    initReveal();
+  });
 }
 
 /* ----------------------------------------------------------
