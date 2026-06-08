@@ -362,14 +362,17 @@ function initBlogFull() {
 function fetchSheetPosts(callback) {
   const cfg = window.SITE_CONFIG || {};
   if (!cfg.BLOG_ENDPOINT) return;
-  // 6-second timeout — don't let a slow Apps Script stall the page
-  const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
-  const timer = controller ? setTimeout(() => controller.abort(), 6000) : null;
-  fetch(cfg.BLOG_ENDPOINT + "?action=posts", controller ? { signal: controller.signal } : {})
-    .then((r) => r.json())
-    .then((posts) => { if (Array.isArray(posts) && posts.length) callback(posts); })
-    .catch(() => {})
-    .finally(() => { if (timer) clearTimeout(timer); });
+  // Reuse the fetch that config.js already started — don't open a second request
+  const promise = window._blogFetch || (function () {
+    const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+    if (ctrl) setTimeout(() => ctrl.abort(), 7000);
+    return fetch(cfg.BLOG_ENDPOINT + "?action=posts", ctrl ? { signal: ctrl.signal } : {})
+      .then((r) => r.json()).catch(() => null);
+  })();
+  window._blogFetch = null; // consume once
+  promise.then((posts) => {
+    if (Array.isArray(posts) && posts.length) callback(posts);
+  }).catch(() => {});
 }
 
 /* ----------------------------------------------------------

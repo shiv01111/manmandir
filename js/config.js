@@ -23,6 +23,21 @@ window.SITE_CONFIG = {
   CLARITY_ID: "",
 };
 
+/* ---- Kick off blog fetch immediately (before DOMContentLoaded) ----------
+   Stores a Promise in window._blogFetch so main.js can await it instead
+   of starting a brand-new request after the DOM is ready — saves ~200-600ms. */
+(function () {
+  var ep = (window.SITE_CONFIG || {}).BLOG_ENDPOINT;
+  if (!ep) return;
+  try {
+    var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+    if (ctrl) setTimeout(function () { ctrl.abort(); }, 7000);
+    window._blogFetch = fetch(ep + "?action=posts", ctrl ? { signal: ctrl.signal } : {})
+      .then(function (r) { return r.json(); })
+      .catch(function () { return null; });
+  } catch (e) {}
+})();
+
 /* ---- Loads analytics only if IDs are provided (no errors when blank) ---- */
 (function () {
   var c = window.SITE_CONFIG || {};
