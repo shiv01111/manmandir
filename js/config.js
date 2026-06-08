@@ -14,7 +14,7 @@ window.SITE_CONFIG = {
 
   // Google Apps Script Web App URL for the SEPARATE Blog Sheet (apps-script/Blog.gs).
   // SETUP.md → Step 1b.  Paste the Blog.gs deployment URL here.
-  BLOG_ENDPOINT: "",
+  BLOG_ENDPOINT: "https://script.google.com/macros/s/AKfycbwMj7b86s1vQhVBFDMi9XFyYY1GZgY1PZPlA5d9HFeHEqKuS5qKtFzGGuPzCRaoq4ZpSg/exec",
 
   // Google Analytics 4 Measurement ID.  SETUP.md → Step 2.  Example: "G-XXXXXXXXXX"
   GA4_ID: "",
