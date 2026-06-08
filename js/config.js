@@ -10,7 +10,7 @@ window.SITE_CONFIG = {
 
   // Google Apps Script Web App URL that saves inquiries to your Google Sheet.
   // SETUP.md → Step 1.  Example: "https://script.google.com/macros/s/AKfy.../exec"
-  LEADS_ENDPOINT: "",
+  LEADS_ENDPOINT: "https://script.google.com/macros/s/AKfycbwyA_UAbF7Od51HiS5FWb-GZobze-yXcEVjqFrwyZzCV9D8wTQ1U7u0UiSec-bs57NEmA/exec",
 
   // Google Analytics 4 Measurement ID.  SETUP.md → Step 2.  Example: "G-XXXXXXXXXX"
   GA4_ID: "",
