@@ -311,24 +311,14 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;");
 }
 
-/* Fetch posts from Blog Sheet (live) with fallback to static posts.js */
-function loadPosts(callback) {
-  const cfg = window.SITE_CONFIG || {};
-  const endpoint = cfg.BLOG_ENDPOINT;
-  if (!endpoint) { callback(window.BLOG_POSTS || []); return; }
-
-  fetch(endpoint + "?action=posts")
-    .then((r) => r.json())
-    .then((posts) => {
-      callback(Array.isArray(posts) && posts.length ? posts : (window.BLOG_POSTS || []));
-    })
-    .catch(() => callback(window.BLOG_POSTS || []));
-}
-
+/* Render immediately from static posts.js, then silently update from Sheet */
 function initBlogPreview() {
   const wrap = document.getElementById("blogPreview");
   if (!wrap) return;
-  loadPosts((posts) => {
+  const staticPosts = window.BLOG_POSTS || [];
+  wrap.innerHTML = staticPosts.slice(0, 3).map((p) => postCard(p, false)).join("");
+  initReveal();
+  fetchSheetPosts((posts) => {
     wrap.innerHTML = posts.slice(0, 3).map((p) => postCard(p, false)).join("");
     initReveal();
   });
@@ -337,10 +327,22 @@ function initBlogPreview() {
 function initBlogFull() {
   const wrap = document.getElementById("blogFull");
   if (!wrap) return;
-  loadPosts((posts) => {
+  const staticPosts = window.BLOG_POSTS || [];
+  wrap.innerHTML = staticPosts.map((p) => postCard(p, true)).join("");
+  initReveal();
+  fetchSheetPosts((posts) => {
     wrap.innerHTML = posts.map((p) => postCard(p, true)).join("");
     initReveal();
   });
+}
+
+function fetchSheetPosts(callback) {
+  const cfg = window.SITE_CONFIG || {};
+  if (!cfg.BLOG_ENDPOINT) return;
+  fetch(cfg.BLOG_ENDPOINT + "?action=posts")
+    .then((r) => r.json())
+    .then((posts) => { if (Array.isArray(posts) && posts.length) callback(posts); })
+    .catch(() => {});
 }
 
 /* ----------------------------------------------------------
