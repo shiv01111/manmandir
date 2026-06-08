@@ -4,172 +4,207 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Blog Admin — Advocate Urvish</title>
-  <script>
-    tailwind.config = {
-      theme: { extend: { colors: { navy:"#0f1c3f", maroon:"#7a1f2b", gold:"#c9a14a", cream:"#f7f3ea" } } }
-    }
-  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet" />
   <script src="js/config.js"></script>
   <style>
-    body { font-family:'Poppins',sans-serif; }
-    h1,h2 { font-family:'Playfair Display',serif; }
+    body { font-family:'Poppins',sans-serif; background:#f7f3ea; }
+    .serif { font-family:'Playfair Display',serif; }
     textarea { resize:vertical; }
+    .tag-pill { background:#f3e8c8; color:#7a4f00; font-size:.72rem; font-weight:600; padding:2px 10px; border-radius:999px; display:inline-block; }
+    .preview-body p { margin-bottom:.75rem; line-height:1.7; color:#374151; font-size:.9rem; }
+    #publishBtn { background:#0f1c3f; color:#fff; width:100%; padding:.85rem; border-radius:.75rem; font-weight:600; font-size:1rem; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:.5rem; transition:opacity .2s; }
+    #publishBtn:hover { opacity:.88; }
+    #publishBtn:disabled { opacity:.5; cursor:not-allowed; }
+    .input { width:100%; border:1.5px solid #d1d5db; border-radius:.6rem; padding:.6rem .85rem; font-size:.875rem; font-family:'Poppins',sans-serif; outline:none; transition:border-color .2s; }
+    .input:focus { border-color:#c9a14a; box-shadow:0 0 0 3px rgba(201,161,74,.15); }
+    label { display:block; font-size:.72rem; font-weight:600; color:#0f1c3f; text-transform:uppercase; letter-spacing:.05em; margin-bottom:.3rem; }
   </style>
 </head>
-<body class="bg-cream min-h-screen">
+<body>
 
-  <!-- Header -->
-  <header class="bg-navy text-white py-4 px-5 flex items-center justify-between">
+  <!-- Top bar -->
+  <header style="background:#0f1c3f;" class="text-white py-3 px-5 flex items-center justify-between">
     <div class="flex items-center gap-3">
-      <div class="w-9 h-9 bg-gold rounded-full flex items-center justify-center font-bold text-navy">U</div>
+      <div style="background:#c9a14a;color:#0f1c3f;" class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm">U</div>
       <div>
-        <div class="font-semibold text-sm">Advocate Urvish</div>
-        <div class="text-gold text-xs">Blog Admin</div>
+        <div class="font-semibold text-sm leading-tight">Advocate Urvish</div>
+        <div style="color:#c9a14a;" class="text-xs">Blog Admin Panel</div>
       </div>
     </div>
-    <a href="index.html" class="text-xs text-gold/80 hover:text-gold underline">View Website</a>
+    <a href="index.html" style="color:#c9a14a;" class="text-xs hover:underline">← View Website</a>
   </header>
 
-  <main class="max-w-lg mx-auto px-4 py-8 space-y-6">
+  <!-- Main two-column layout -->
+  <div class="min-h-screen p-4 md:p-6">
+    <div class="max-w-6xl mx-auto">
 
-    <!-- Not configured warning -->
-    <div id="noConfig" class="hidden bg-yellow-50 border border-yellow-300 rounded-xl p-4 text-sm text-yellow-800">
-      <strong>Setup needed:</strong> BLOG_ENDPOINT is not set in <code>js/config.js</code>. Deploy <code>apps-script/Blog.gs</code> and paste the URL first.
-    </div>
+      <!-- Not configured warning -->
+      <div id="noConfig" class="hidden bg-yellow-50 border border-yellow-300 rounded-xl p-3 mb-4 text-sm text-yellow-800">
+        <strong>Setup needed:</strong> BLOG_ENDPOINT is not set in <code>js/config.js</code>.
+      </div>
 
-    <!-- Write post form -->
-    <div class="bg-white rounded-2xl shadow-md p-6">
-      <h1 class="text-2xl text-navy mb-5">Write New Blog Post</h1>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-      <div class="space-y-4">
+        <!-- ── LEFT: Form ── -->
+        <div class="bg-white rounded-2xl shadow-md p-6 flex flex-col gap-4">
+          <h1 class="serif text-2xl" style="color:#0f1c3f;">Write New Post</h1>
 
-        <div>
-          <label class="block text-xs font-semibold text-navy mb-1 uppercase tracking-wide">Title *</label>
-          <input id="fTitle" type="text" placeholder="e.g. How to Get a Marriage Certificate in Ahmedabad"
-            class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold" />
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
+          <!-- Title -->
           <div>
-            <label class="block text-xs font-semibold text-navy mb-1 uppercase tracking-wide">Category *</label>
-            <select id="fTag" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gold">
-              <option>Court Marriage</option>
-              <option>Love Marriage</option>
-              <option>Divorce</option>
-              <option>Legal Rights</option>
-              <option>Awareness</option>
-              <option>Guidance</option>
-              <option>Documentation</option>
-              <option>High Court</option>
-            </select>
+            <label>Title *</label>
+            <input id="fTitle" class="input" type="text" placeholder="e.g. How to Get a Marriage Certificate in Ahmedabad" oninput="updatePreview()" />
           </div>
+
+          <!-- Category + Date -->
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label>Category *</label>
+              <select id="fTag" class="input bg-white" onchange="updatePreview()">
+                <option>Court Marriage</option>
+                <option>Love Marriage</option>
+                <option>Divorce</option>
+                <option>Legal Rights</option>
+                <option>Awareness</option>
+                <option>Guidance</option>
+                <option>Documentation</option>
+                <option>High Court</option>
+              </select>
+            </div>
+            <div>
+              <label>Date</label>
+              <input id="fDate" class="input" type="date" oninput="updatePreview()" />
+            </div>
+          </div>
+
+          <!-- Summary -->
           <div>
-            <label class="block text-xs font-semibold text-navy mb-1 uppercase tracking-wide">Date</label>
-            <input id="fDate" type="date" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold" />
+            <label>Short Summary *</label>
+            <input id="fExcerpt" class="input" type="text" placeholder="1–2 lines shown on blog cards" oninput="updatePreview()" />
           </div>
+
+          <!-- Body -->
+          <div class="flex-1">
+            <label>Full Article *</label>
+            <textarea id="fBody" class="input" rows="12"
+              placeholder="Write the full article here.
+
+Leave an empty line between paragraphs for better formatting."
+              oninput="updatePreview()"></textarea>
+          </div>
+
+          <!-- Status -->
+          <div id="statusBox" class="hidden rounded-lg px-4 py-3 text-sm font-medium text-center"></div>
+
+          <!-- Buttons row -->
+          <div class="flex gap-3">
+            <button id="publishBtn" onclick="publish()">
+              <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+              </svg>
+              Publish Post
+            </button>
+            <button onclick="clearForm()"
+              style="background:#f3f4f6;color:#374151;border:none;border-radius:.75rem;padding:.85rem 1.2rem;font-weight:500;font-size:.875rem;cursor:pointer;white-space:nowrap;">
+              Clear
+            </button>
+          </div>
+
         </div>
 
-        <div>
-          <label class="block text-xs font-semibold text-navy mb-1 uppercase tracking-wide">Short Summary *</label>
-          <input id="fExcerpt" type="text" placeholder="1–2 lines shown on blog cards"
-            class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold" />
+        <!-- ── RIGHT: Live Preview ── -->
+        <div class="flex flex-col gap-4">
+
+          <!-- Preview label -->
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-semibold" style="color:#0f1c3f;">Live Preview</span>
+            <span class="text-xs text-gray-400">Updates as you type</span>
+          </div>
+
+          <!-- Blog card preview -->
+          <div id="previewCard" class="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+            <div class="flex items-center gap-3 mb-3">
+              <span id="pvTag" class="tag-pill">Court Marriage</span>
+              <span id="pvDate" class="text-xs text-gray-400"></span>
+            </div>
+            <h2 id="pvTitle" class="serif text-xl font-bold mb-2" style="color:#0f1c3f;">Your post title will appear here</h2>
+            <p id="pvExcerpt" class="text-sm text-gray-500 mb-4">Short summary will appear here...</p>
+            <div id="pvDivider" class="border-t border-gray-100 mb-4"></div>
+            <div id="pvBody" class="preview-body text-sm text-gray-400">
+              <p>Full article will appear here as you type...</p>
+            </div>
+          </div>
+
+          <!-- Published posts list -->
+          <div class="bg-white rounded-2xl shadow-md p-5">
+            <div class="flex items-center justify-between mb-3">
+              <h2 class="serif text-lg" style="color:#0f1c3f;">Published Posts</h2>
+              <button onclick="loadPosts()" class="text-xs text-gray-400 hover:text-gray-600">Refresh</button>
+            </div>
+            <div id="postsList" class="text-sm text-gray-400">Loading...</div>
+          </div>
+
         </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-navy mb-1 uppercase tracking-wide">Full Article *</label>
-          <textarea id="fBody" rows="10" placeholder="Write the full article here. Leave an empty line between paragraphs."
-            class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold"></textarea>
-        </div>
-
-        <!-- Status -->
-        <div id="statusBox" class="hidden rounded-lg px-4 py-3 text-sm font-medium text-center"></div>
-
-        <!-- Publish button -->
-        <button id="publishBtn" onclick="publish()"
-          style="background-color:#0f1c3f;"
-          class="w-full text-white font-semibold py-3 rounded-xl transition-all hover:opacity-90 flex items-center justify-center gap-2">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-          </svg>
-          Publish Post
-        </button>
 
       </div>
     </div>
+  </div>
 
-    <!-- Recent posts -->
-    <div class="bg-white rounded-2xl shadow-md p-6">
-      <h2 class="text-lg text-navy mb-4">Published Posts</h2>
-      <div id="postsList" class="text-sm text-gray-400">Loading...</div>
-    </div>
-
-  </main>
-
+  <script src="js/posts.js"></script>
   <script>
+    var cfg = window.SITE_CONFIG || {};
+
+    // Show warning if blog not configured
+    if (!cfg.BLOG_ENDPOINT) document.getElementById("noConfig").classList.remove("hidden");
+
     // Set today's date
     (function(){
       var d = new Date();
       document.getElementById("fDate").value =
-        d.getFullYear() + "-" +
-        String(d.getMonth()+1).padStart(2,"0") + "-" +
-        String(d.getDate()).padStart(2,"0");
+        d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+      updatePreview();
     })();
 
-    var cfg = window.SITE_CONFIG || {};
+    // ── Live preview ────────────────────────────────────────────
+    function updatePreview() {
+      var title   = val("fTitle")   || "Your post title will appear here";
+      var tag     = val("fTag")     || "Court Marriage";
+      var date    = val("fDate")    || "";
+      var excerpt = val("fExcerpt") || "Short summary will appear here...";
+      var body    = val("fBody")    || "";
 
-    // Show warning if not configured
-    if (!cfg.BLOG_ENDPOINT) {
-      document.getElementById("noConfig").classList.remove("hidden");
-    }
+      document.getElementById("pvTitle").textContent   = title;
+      document.getElementById("pvTag").textContent     = tag;
+      document.getElementById("pvDate").textContent    = date ? formatDate(date) : "";
+      document.getElementById("pvExcerpt").textContent = excerpt;
 
-    // Load existing posts
-    function loadPosts() {
-      var el = document.getElementById("postsList");
-      if (!cfg.BLOG_ENDPOINT) {
-        el.textContent = "Configure BLOG_ENDPOINT in js/config.js to see posts.";
-        return;
+      var bodyEl = document.getElementById("pvBody");
+      if (body.trim()) {
+        bodyEl.innerHTML = body.trim().split(/\n\n+/).map(function(p){
+          return "<p>" + esc(p.replace(/\n/g,"<br>")) + "</p>";
+        }).join("");
+        bodyEl.style.color = "";
+      } else {
+        bodyEl.innerHTML = "<p>Full article will appear here as you type...</p>";
+        bodyEl.style.color = "#9ca3af";
       }
-      fetch(cfg.BLOG_ENDPOINT + "?action=posts")
-        .then(function(r){ return r.json(); })
-        .then(function(posts){
-          if (!posts.length) { el.textContent = "No posts yet. Write your first one above!"; return; }
-          el.innerHTML = posts.map(function(p){
-            return '<div class="flex items-start justify-between gap-2 py-2 border-b border-gray-100 last:border-0">' +
-              '<div>' +
-                '<span class="inline-block bg-gold/20 text-gold text-xs font-semibold px-2 py-0.5 rounded-full mr-1">' + esc(p.tag) + '</span>' +
-                '<span class="text-navy font-medium">' + esc(p.title) + '</span>' +
-              '</div>' +
-              '<span class="text-gray-400 text-xs whitespace-nowrap">' + esc(p.date) + '</span>' +
-            '</div>';
-          }).join("");
-        })
-        .catch(function(){ el.textContent = "Could not load posts."; });
-    }
-    loadPosts();
-
-    function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
-
-    function setStatus(msg, ok) {
-      var box = document.getElementById("statusBox");
-      box.textContent = msg;
-      box.className = "rounded-lg px-4 py-3 text-sm font-medium text-center " +
-        (ok ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200");
-      box.classList.remove("hidden");
     }
 
+    function formatDate(iso) {
+      var d = new Date(iso + "T00:00:00");
+      if (isNaN(d)) return iso;
+      return d.toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" });
+    }
+
+    // ── Publish ──────────────────────────────────────────────────
     function publish() {
-      if (!cfg.BLOG_ENDPOINT) {
-        setStatus("BLOG_ENDPOINT not set. Please complete setup first.", false);
-        return;
-      }
+      if (!cfg.BLOG_ENDPOINT) { setStatus("BLOG_ENDPOINT not configured. See SETUP.md.", false); return; }
 
-      var title   = document.getElementById("fTitle").value.trim();
-      var excerpt = document.getElementById("fExcerpt").value.trim();
-      var body    = document.getElementById("fBody").value.trim();
-      var tag     = document.getElementById("fTag").value;
-      var date    = document.getElementById("fDate").value;
+      var title   = val("fTitle");
+      var excerpt = val("fExcerpt");
+      var body    = val("fBody");
+      var tag     = val("fTag");
+      var date    = val("fDate");
 
       if (!title)   { setStatus("Please enter a title.", false); return; }
       if (!excerpt) { setStatus("Please enter a short summary.", false); return; }
@@ -177,12 +212,12 @@
 
       var btn = document.getElementById("publishBtn");
       btn.disabled = true;
-      btn.textContent = "Publishing…";
+      btn.innerHTML = "Publishing…";
 
       fetch(cfg.BLOG_ENDPOINT, {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ title:title, excerpt:excerpt, body:body, tag:tag, date:date })
+        body:    JSON.stringify({ title:title, excerpt:excerpt, body:body, tag:tag, date:date })
       })
       .then(function(r){ return r.json(); })
       .then(function(res){
@@ -191,18 +226,68 @@
           document.getElementById("fTitle").value   = "";
           document.getElementById("fExcerpt").value = "";
           document.getElementById("fBody").value    = "";
+          updatePreview();
           loadPosts();
         } else {
           setStatus("Error: " + (res.error || "unknown"), false);
         }
       })
-      .catch(function(){
-        setStatus("Network error. Please try again.", false);
-      })
+      .catch(function(){ setStatus("Network error. Please try again.", false); })
       .finally(function(){
         btn.disabled = false;
-        btn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Publish Post';
+        btn.innerHTML = '<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg> Publish Post';
       });
+    }
+
+    // ── Load published posts list ────────────────────────────────
+    function loadPosts() {
+      var el = document.getElementById("postsList");
+      if (!cfg.BLOG_ENDPOINT) {
+        // Show static posts as fallback
+        renderPostsList(window.BLOG_POSTS || []);
+        return;
+      }
+      el.textContent = "Loading...";
+      fetch(cfg.BLOG_ENDPOINT + "?action=posts")
+        .then(function(r){ return r.json(); })
+        .then(function(posts){
+          if (!posts.length) { el.textContent = "No posts yet. Write your first one!"; return; }
+          renderPostsList(posts);
+        })
+        .catch(function(){ renderPostsList(window.BLOG_POSTS || []); });
+    }
+
+    function renderPostsList(posts) {
+      var el = document.getElementById("postsList");
+      if (!posts.length) { el.textContent = "No posts yet. Write your first one!"; return; }
+      el.innerHTML = posts.map(function(p){
+        return '<div class="flex items-start justify-between gap-2 py-2 border-b border-gray-100 last:border-0">' +
+          '<div class="flex-1 min-w-0">' +
+            '<span class="tag-pill mr-1">' + esc(p.tag) + '</span>' +
+            '<span class="font-medium text-gray-800">' + esc(p.title) + '</span>' +
+          '</div>' +
+          '<span class="text-gray-400 text-xs whitespace-nowrap ml-2">' + esc(p.date) + '</span>' +
+        '</div>';
+      }).join("");
+    }
+
+    loadPosts();
+
+    // ── Helpers ──────────────────────────────────────────────────
+    function val(id){ return (document.getElementById(id).value || "").trim(); }
+    function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+    function clearForm(){
+      ["fTitle","fExcerpt","fBody"].forEach(function(id){ document.getElementById(id).value=""; });
+      document.getElementById("statusBox").classList.add("hidden");
+      updatePreview();
+    }
+    function setStatus(msg, ok) {
+      var box = document.getElementById("statusBox");
+      box.textContent = msg;
+      box.style.background = ok ? "#f0fdf4" : "#fef2f2";
+      box.style.color      = ok ? "#166534" : "#991b1b";
+      box.style.border     = "1px solid " + (ok ? "#bbf7d0" : "#fecaca");
+      box.classList.remove("hidden");
     }
   </script>
 </body>
