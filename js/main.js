@@ -272,13 +272,13 @@ function initReveal() {
    5. BLOG RENDERING
    ---------------------------------------------------------- */
 function formatDate(iso) {
-  const d = new Date(iso + "T00:00:00");
-  if (isNaN(d)) return iso;
-  return d.toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  const s = String(iso || "").trim();
+  // Try YYYY-MM-DD first; fall back to parsing the raw string (e.g. full JS Date string from sheet)
+  const d = s.length >= 10 && s[4] === "-"
+    ? new Date(s.slice(0, 10) + "T00:00:00")
+    : new Date(s);
+  if (isNaN(d)) return s;
+  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 }
 
 function postCard(post, withBody) {
