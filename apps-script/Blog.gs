@@ -29,7 +29,7 @@
 
 var BLOG_HEADERS = ["Published", "Date", "Title", "Tag", "Excerpt", "Body"];
 
-/* ── POST: save a new blog post from admin.html ────────────── */
+/* ── POST: publish or delete a blog post ───────────────────── */
 function doPost(e) {
   try {
     var data = {};
@@ -37,15 +37,12 @@ function doPost(e) {
       data = JSON.parse(e.postData.contents);
     }
 
-    // Simple PIN check so only Urvish can publish
-    var cfg   = PropertiesService.getScriptProperties();
-    var pin   = cfg.getProperty("ADMIN_PIN") || "";
-    if (pin && data.pin !== pin) {
-      return jsonOut({ ok: false, error: "Wrong PIN" });
+    if (data.action === "delete") {
+      return deletePost(data.title);
     }
 
+    // Default: publish new post
     var sheet = getOrCreateBlogSheet();
-
     sheet.appendRow([
       true,
       data.date    || Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd"),
@@ -54,9 +51,24 @@ function doPost(e) {
       data.excerpt || "",
       data.body    || "",
     ]);
-
     return jsonOut({ ok: true });
 
+  } catch (err) {
+    return jsonOut({ ok: false, error: String(err) });
+  }
+}
+
+function deletePost(title) {
+  try {
+    var sheet = getOrCreateBlogSheet();
+    var rows  = sheet.getDataRange().getValues();
+    for (var i = rows.length - 1; i >= 1; i--) {
+      if (String(rows[i][2]).trim() === String(title || "").trim()) {
+        sheet.deleteRow(i + 1); // sheet rows are 1-indexed
+        return jsonOut({ ok: true });
+      }
+    }
+    return jsonOut({ ok: false, error: "Post not found" });
   } catch (err) {
     return jsonOut({ ok: false, error: String(err) });
   }
