@@ -150,11 +150,10 @@ Leave an empty line between paragraphs for better formatting."
     </div>
   </div>
 
-  <script src="js/posts.js"></script>
   <script>
     var cfg = window.SITE_CONFIG || {};
+    var _posts = []; // in-memory post list — no repeated fetches
 
-    // Show warning if blog not configured
     if (!cfg.BLOG_ENDPOINT) document.getElementById("noConfig").classList.remove("hidden");
 
     // Set today's date
@@ -165,19 +164,42 @@ Leave an empty line between paragraphs for better formatting."
       updatePreview();
     })();
 
-    // ── Live preview ────────────────────────────────────────────
+    // ── ONE fetch on load — reuse config.js eager request ───────
+    (function(){
+      var promise = window._blogFetch; // already in flight from config.js
+      window._blogFetch = null;
+      if (!promise) {
+        if (!cfg.BLOG_ENDPOINT) { renderPostsList([]); return; }
+        promise = fetch(cfg.BLOG_ENDPOINT + "?action=posts").then(function(r){ return r.json(); }).catch(function(){ return []; });
+      }
+      document.getElementById("postsList").textContent = "Loading…";
+      promise.then(function(posts){
+        _posts = Array.isArray(posts) ? posts : [];
+        renderPostsList(_posts);
+      }).catch(function(){ renderPostsList([]); });
+    })();
+
+    // Manual refresh only when user clicks Refresh button
+    function loadPosts() {
+      if (!cfg.BLOG_ENDPOINT) { renderPostsList([]); return; }
+      document.getElementById("postsList").textContent = "Refreshing…";
+      fetch(cfg.BLOG_ENDPOINT + "?action=posts")
+        .then(function(r){ return r.json(); })
+        .then(function(posts){ _posts = Array.isArray(posts) ? posts : []; renderPostsList(_posts); })
+        .catch(function(){ renderPostsList(_posts); });
+    }
+
+    // ── Live preview ─────────────────────────────────────────────
     function updatePreview() {
       var title   = val("fTitle")   || "Your post title will appear here";
       var tag     = val("fTag")     || "Court Marriage";
       var date    = val("fDate")    || "";
       var excerpt = val("fExcerpt") || "Short summary will appear here...";
       var body    = val("fBody")    || "";
-
       document.getElementById("pvTitle").textContent   = title;
       document.getElementById("pvTag").textContent     = tag;
-      document.getElementById("pvDate").textContent    = date ? formatDate(date) : "";
+      document.getElementById("pvDate").textContent    = date ? fmtDate(date) : "";
       document.getElementById("pvExcerpt").textContent = excerpt;
-
       var bodyEl = document.getElementById("pvBody");
       if (body.trim()) {
         bodyEl.innerHTML = body.trim().split(/\n\n+/).map(function(p){
@@ -190,71 +212,68 @@ Leave an empty line between paragraphs for better formatting."
       }
     }
 
-    function formatDate(iso) {
-      var d = new Date(iso + "T00:00:00");
+    function fmtDate(iso) {
+      // Handle both "2026-06-08" and full Date strings
+      var clean = String(iso).slice(0,10);
+      var d = new Date(clean + "T00:00:00");
       if (isNaN(d)) return iso;
       return d.toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" });
     }
 
-    // ── Publish ──────────────────────────────────────────────────
+    // ── Publish — NO extra fetch, just add to in-memory list ────
     function publish() {
-      if (!cfg.BLOG_ENDPOINT) { setStatus("BLOG_ENDPOINT not configured. See SETUP.md.", false); return; }
-
-      var title   = val("fTitle");
-      var excerpt = val("fExcerpt");
-      var body    = val("fBody");
-      var tag     = val("fTag");
-      var date    = val("fDate");
-
+      if (!cfg.BLOG_ENDPOINT) { setStatus("BLOG_ENDPOINT not configured.", false); return; }
+      var title = val("fTitle"), excerpt = val("fExcerpt"), body = val("fBody");
+      var tag = val("fTag"), date = val("fDate");
       if (!title)   { setStatus("Please enter a title.", false); return; }
       if (!excerpt) { setStatus("Please enter a short summary.", false); return; }
       if (!body)    { setStatus("Please write the article.", false); return; }
 
       var btn = document.getElementById("publishBtn");
-      btn.disabled = true;
-      btn.innerHTML = "Publishing…";
+      btn.disabled = true; btn.innerHTML = "Publishing…";
 
       fetch(cfg.BLOG_ENDPOINT, {
-        method:  "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body:    JSON.stringify({ title:title, excerpt:excerpt, body:body, tag:tag, date:date })
+        method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ title:title, excerpt:excerpt, body:body, tag:tag, date:date })
       })
       .then(function(r){ return r.json(); })
       .then(function(res){
         if (res.ok) {
-          setStatus("Post published! It is now live on the website.", true);
-          document.getElementById("fTitle").value   = "";
+          setStatus("Published! Live on website now.", true);
+          _posts.unshift({ title:title, excerpt:excerpt, body:body, tag:tag, date:date });
+          renderPostsList(_posts);
+          try { localStorage.removeItem("av_blog_v1"); } catch(e){}
+          document.getElementById("fTitle").value = "";
           document.getElementById("fExcerpt").value = "";
-          document.getElementById("fBody").value    = "";
+          document.getElementById("fBody").value = "";
           updatePreview();
-          loadPosts();
-        } else {
-          setStatus("Error: " + (res.error || "unknown"), false);
-        }
+        } else { setStatus("Error: " + (res.error || "unknown"), false); }
       })
-      .catch(function(){ setStatus("Network error. Please try again.", false); })
+      .catch(function(){ setStatus("Network error. Try again.", false); })
       .finally(function(){
         btn.disabled = false;
         btn.innerHTML = '<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg> Publish Post';
       });
     }
 
-    // ── Load published posts list ────────────────────────────────
-    function loadPosts() {
-      var el = document.getElementById("postsList");
-      if (!cfg.BLOG_ENDPOINT) {
-        // Show static posts as fallback
-        renderPostsList(window.BLOG_POSTS || []);
-        return;
-      }
-      el.textContent = "Loading...";
-      fetch(cfg.BLOG_ENDPOINT + "?action=posts")
-        .then(function(r){ return r.json(); })
-        .then(function(posts){
-          if (!posts.length) { el.textContent = "No posts yet. Write your first one!"; return; }
-          renderPostsList(posts);
-        })
-        .catch(function(){ renderPostsList(window.BLOG_POSTS || []); });
+    // ── Delete — remove from in-memory list, no re-fetch ────────
+    function deletePost(title) {
+      if (!confirm('Delete "' + title + '"?\n\nThis cannot be undone.')) return;
+      if (!cfg.BLOG_ENDPOINT) { alert("Not configured."); return; }
+      fetch(cfg.BLOG_ENDPOINT, {
+        method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action:"delete", title:title })
+      })
+      .then(function(r){ return r.json(); })
+      .then(function(res){
+        if (res.ok) {
+          setStatus('"' + title + '" deleted.', true);
+          _posts = _posts.filter(function(p){ return p.title !== title; });
+          renderPostsList(_posts);
+          try { localStorage.removeItem("av_blog_v1"); } catch(e){}
+        } else { setStatus("Could not delete: " + (res.error || "unknown"), false); }
+      })
+      .catch(function(){ setStatus("Network error. Try again.", false); });
     }
 
     function renderPostsList(posts) {
@@ -265,45 +284,17 @@ Leave an empty line between paragraphs for better formatting."
           '<div class="flex-1 min-w-0">' +
             '<span class="tag-pill mr-1">' + esc(p.tag) + '</span>' +
             '<span class="font-medium text-gray-800">' + esc(p.title) + '</span>' +
-            '<div class="text-xs text-gray-400 mt-0.5">' + esc(p.date) + '</div>' +
+            '<div class="text-xs text-gray-400 mt-0.5">' + fmtDate(p.date) + '</div>' +
           '</div>' +
           '<button class="del-btn" data-title="' + esc(p.title) + '" ' +
             'style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca;border-radius:.5rem;padding:.25rem .6rem;font-size:.75rem;cursor:pointer;white-space:nowrap;flex-shrink:0;">' +
-            '🗑 Delete' +
-          '</button>' +
+            '🗑 Delete</button>' +
         '</div>';
       }).join("");
-
-      // Attach click events after rendering
       el.querySelectorAll(".del-btn").forEach(function(btn){
         btn.addEventListener("click", function(){ deletePost(this.getAttribute("data-title")); });
       });
     }
-
-    function deletePost(title) {
-      if (!confirm('Delete "' + title + '"?\n\nThis cannot be undone.')) return;
-      if (!cfg.BLOG_ENDPOINT) { alert("BLOG_ENDPOINT not configured."); return; }
-
-      fetch(cfg.BLOG_ENDPOINT, {
-        method:  "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body:    JSON.stringify({ action: "delete", title: title })
-      })
-      .then(function(r){ return r.json(); })
-      .then(function(res){
-        if (res.ok) {
-          setStatus('"' + title + '" deleted successfully.', true);
-          // Clear cache so website picks up the change
-          try { localStorage.removeItem("av_blog_v1"); } catch(e){}
-          loadPosts();
-        } else {
-          setStatus("Could not delete: " + (res.error || "unknown error"), false);
-        }
-      })
-      .catch(function(){ setStatus("Network error. Please try again.", false); });
-    }
-
-    loadPosts();
 
     // ── Helpers ──────────────────────────────────────────────────
     function val(id){ return (document.getElementById(id).value || "").trim(); }
